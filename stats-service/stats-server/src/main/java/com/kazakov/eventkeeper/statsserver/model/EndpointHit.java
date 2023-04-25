@@ -3,7 +3,7 @@ package com.kazakov.eventkeeper.statsserver.model;
 import lombok.*;
 import org.hibernate.Hibernate;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Objects;
 

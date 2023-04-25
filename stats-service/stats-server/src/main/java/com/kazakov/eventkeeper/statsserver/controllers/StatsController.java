@@ -2,6 +2,7 @@ package com.kazakov.eventkeeper.statsserver.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.kazakov.eventkeeper.statsdto.EndpointHitDto;
@@ -26,6 +27,6 @@ public class StatsController {
 
     @PostMapping("hit")
     public ResponseEntity<EndpointHitDto> createHit(@RequestBody EndpointHitDto endpointHitDto) {
-        return ResponseEntity.ok(statsService.createHit(endpointHitDto));
+        return new ResponseEntity<>(statsService.createHit(endpointHitDto), HttpStatus.CREATED);
     }
 }
