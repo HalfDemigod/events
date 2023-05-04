@@ -1,5 +1,9 @@
 package com.kazakov.eventkeeper.mainservice.dao;
 
+import com.kazakov.eventkeeper.mainservice.exceptions.CategoryNotFoundException;
+import com.kazakov.eventkeeper.mainservice.exceptions.UserNotFoundException;
+import com.kazakov.eventkeeper.mainservice.model.Category;
+import com.kazakov.eventkeeper.mainservice.model.User;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -18,11 +22,18 @@ import java.util.List;
 
 public class EventRepositoryCustomImpl implements EventRepositoryCustom {
     private final EventRepository eventRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+
     @PersistenceContext
     private EntityManager entityManager;
 
-    public EventRepositoryCustomImpl(@Lazy EventRepository eventRepository) {
+    public EventRepositoryCustomImpl(@Lazy EventRepository eventRepository,
+                                     @Lazy UserRepository userRepository,
+                                     @Lazy CategoryRepository categoryRepository) {
         this.eventRepository = eventRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
@@ -35,8 +46,11 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
         return eventRepository.findAll((Specification<Event>) (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (users != null) {
-                CriteriaBuilder.In<Long> inInitiator = builder.in(root.get("initiator"));
-                users.forEach(inInitiator::value);
+                CriteriaBuilder.In<User> inInitiator = builder.in(root.get("initiator"));
+                users.stream()
+                        .map(userId -> userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
+                                String.format("User with id=%d was not found", userId))))
+                        .forEach(inInitiator::value);
                 predicates.add(inInitiator);
             }
             if (states != null) {
@@ -45,8 +59,11 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
                 predicates.add(inState);
             }
             if (categories != null) {
-                CriteriaBuilder.In<Long> inCategory = builder.in(root.get("category"));
-                categories.forEach(inCategory::value);
+                CriteriaBuilder.In<Category> inCategory = builder.in(root.get("category"));
+                categories.stream().
+                        map(categoryId -> categoryRepository.findById(categoryId).orElseThrow(() -> new CategoryNotFoundException(
+                                String.format("Category with id=%d was not found", categoryId))))
+                        .forEach(inCategory::value);
                 predicates.add(inCategory);
             }
             if (rangeStart != null) {

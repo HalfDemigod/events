@@ -20,9 +20,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String email;
-    @NotBlank
     @Column(unique = true)
     private String name;
+    @NotBlank
+    private String password;
+    private String role;
     @OneToMany(mappedBy = "initiator")
     @ToString.Exclude
     private Set<Event> events;

@@ -1,8 +1,10 @@
 package com.kazakov.eventkeeper.mainservice.controllers;
 
+import com.kazakov.eventkeeper.mainservice.security.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import com.kazakov.eventkeeper.mainservice.dto.*;
 import com.kazakov.eventkeeper.mainservice.services.EventService;
@@ -13,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/users/{userId}/events")
 @RequiredArgsConstructor
+@Secured(Roles.ROLE_USER)
 public class EventPrivateController {
     private final EventService eventService;
 

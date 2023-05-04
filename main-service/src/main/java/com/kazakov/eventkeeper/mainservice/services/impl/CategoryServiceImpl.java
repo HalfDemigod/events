@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import com.kazakov.eventkeeper.mainservice.Utils;
+import com.kazakov.eventkeeper.mainservice.utils.Utils;
 import com.kazakov.eventkeeper.mainservice.dao.CategoryRepository;
 import com.kazakov.eventkeeper.mainservice.dao.EventRepository;
 import com.kazakov.eventkeeper.mainservice.dto.CategoryDto;

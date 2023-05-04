@@ -1,8 +1,10 @@
 package com.kazakov.eventkeeper.mainservice.controllers;
 
+import com.kazakov.eventkeeper.mainservice.security.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import com.kazakov.eventkeeper.mainservice.dto.CompilationDto;
 import com.kazakov.eventkeeper.mainservice.dto.CompilationNewDto;
@@ -13,6 +15,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/admin/compilations")
 @RequiredArgsConstructor
+@Secured(Roles.ROLE_ADMIN)
 public class CompilationAdminController {
     private final CompilationService compilationService;
 

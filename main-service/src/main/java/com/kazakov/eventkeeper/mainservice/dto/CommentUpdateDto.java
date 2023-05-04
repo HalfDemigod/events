@@ -1,6 +1,7 @@
 package com.kazakov.eventkeeper.mainservice.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
@@ -8,11 +9,8 @@ import lombok.extern.jackson.Jacksonized;
 @Value
 @Builder
 @Jacksonized
-public class UserShortDto {
-    String email;
+public class CommentUpdateDto {
+    @Size(min = 1, max = 2000)
     @NotBlank
-    String name;
-    @NotBlank
-    String password;
-    Boolean admin;
+    String text;
 }

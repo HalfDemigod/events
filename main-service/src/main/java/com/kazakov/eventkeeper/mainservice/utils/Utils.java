@@ -1,4 +1,4 @@
-package com.kazakov.eventkeeper.mainservice;
+package com.kazakov.eventkeeper.mainservice.utils;
 
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
