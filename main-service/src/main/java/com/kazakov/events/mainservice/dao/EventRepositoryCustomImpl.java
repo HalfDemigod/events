@@ -1,0 +1,154 @@
+package com.kazakov.events.mainservice.dao;
+
+import com.kazakov.events.mainservice.exceptions.CategoryNotFoundException;
+import com.kazakov.events.mainservice.exceptions.UserNotFoundException;
+import com.kazakov.events.mainservice.model.Category;
+import com.kazakov.events.mainservice.model.User;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import com.kazakov.events.mainservice.model.Event;
+import com.kazakov.events.mainservice.model.EventState;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+
+import jakarta.persistence.criteria.Predicate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+public class EventRepositoryCustomImpl implements EventRepositoryCustom {
+    private final EventRepository eventRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public EventRepositoryCustomImpl(@Lazy EventRepository eventRepository,
+                                     @Lazy UserRepository userRepository,
+                                     @Lazy CategoryRepository categoryRepository) {
+        this.eventRepository = eventRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+    }
+
+    @Override
+    public List<Event> findAllEventsWithFilter(List<Long> users,
+                                               List<EventState> states,
+                                               List<Long> categories,
+                                               LocalDateTime rangeStart,
+                                               LocalDateTime rangeEnd,
+                                               Pageable pageable) {
+        return eventRepository.findAll((Specification<Event>) (root, query, builder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (users != null) {
+                CriteriaBuilder.In<User> inInitiator = builder.in(root.get("initiator"));
+                users.stream()
+                        .map(userId -> userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
+                                String.format("User with id=%d was not found", userId))))
+                        .forEach(inInitiator::value);
+                predicates.add(inInitiator);
+            }
+            if (states != null) {
+                CriteriaBuilder.In<EventState> inState = builder.in(root.get("state"));
+                states.forEach(inState::value);
+                predicates.add(inState);
+            }
+            if (categories != null) {
+                CriteriaBuilder.In<Category> inCategory = builder.in(root.get("category"));
+                categories.stream().
+                        map(categoryId -> categoryRepository.findById(categoryId).orElseThrow(() -> new CategoryNotFoundException(
+                                String.format("Category with id=%d was not found", categoryId))))
+                        .forEach(inCategory::value);
+                predicates.add(inCategory);
+            }
+            if (rangeStart != null) {
+                Predicate eventDateGreater = builder.greaterThan(root.get("eventDate"), rangeStart);
+                predicates.add(eventDateGreater);
+            }
+            if (rangeEnd != null) {
+                Predicate eventDateLower = builder.lessThan(root.get("eventDate"), rangeEnd);
+                predicates.add(eventDateLower);
+            }
+            return builder.and(predicates.toArray(new Predicate[]{}));
+        }, pageable).getContent();
+    }
+
+    @Override
+    public List<Event> findAllPublicEventsWithFilter(String text,
+                                                     List<Long> categories,
+                                                     Boolean paid,
+                                                     LocalDateTime rangeStart,
+                                                     LocalDateTime rangeEnd,
+                                                     Boolean onlyAvailable,
+                                                     String sort,
+                                                     Integer from,
+                                                     Integer size) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("select e from Event e ");
+        if (onlyAvailable != null && onlyAvailable) {
+            sb.append("left join Request r on e.id = request.event_id ");
+        }
+        sb.append("where e.state = :state ");
+        if (text != null) {
+            sb.append("and (lower(e.annotation) like :text or lower(e.description) like :text) ");
+        }
+        if (categories != null) {
+            sb.append("and e.category.id in (:categories) ");
+        }
+        if (paid != null) {
+            sb.append("and e.paid = :paid ");
+        }
+        if (rangeStart != null) {
+            sb.append("and e.eventDate >= :rangeStart ");
+        }
+        if (rangeEnd != null) {
+            sb.append("and e.eventDate <= :rangeEnd ");
+        }
+        if (rangeStart == null || rangeEnd == null) {
+            sb.append("and e.eventDate >= :currentDate ");
+        }
+        if (onlyAvailable != null && onlyAvailable) {
+            sb.append("group by e having count(r) < e.participantLimit or e.participantLimit = 0 ");
+        }
+        if (sort != null && sort.equals("VIEWS")) {
+            sb.append("order by e.views desc");
+        } else {
+            sb.append("order by e.eventDate asc");
+        }
+
+        TypedQuery<Event> query = entityManager.createQuery(sb.toString(), Event.class);
+
+        query.setParameter("state", EventState.PUBLISHED);
+        if (text != null) {
+            query.setParameter("text", "%" + text.toLowerCase() + "%");
+        }
+        if (categories != null) {
+            query.setParameter("categories", categories);
+        }
+        if (paid != null) {
+            query.setParameter("paid", paid);
+        }
+        if (rangeStart != null) {
+            query.setParameter("rangeStart", rangeStart);
+        }
+        if (rangeEnd != null) {
+            query.setParameter("rangeEnd", rangeEnd);
+        }
+        if (rangeStart == null || rangeEnd == null) {
+            query.setParameter("currentDate", LocalDateTime.now());
+        }
+
+        if (size != null) {
+            query.setFirstResult(from);
+            query.setMaxResults(size);
+        }
+        return query.getResultList();
+
+    }
+}

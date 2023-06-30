@@ -10,14 +10,14 @@
 		<relativePath/>
 	</parent>
 
-	<name>Event Keeper</name>
+	<name>Events</name>
 	<modules>
 		<module>main-service</module>
 		<module>stats-service</module>
 	</modules>
 
 	<groupId>com.kazakov</groupId>
-	<artifactId>event-keeper</artifactId>
+	<artifactId>events</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
